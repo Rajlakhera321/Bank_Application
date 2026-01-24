@@ -1,5 +1,6 @@
 package bank.web.app.service;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 
 import javax.crypto.SecretKey;
@@ -20,8 +21,7 @@ public class JwtService {
     private String jwtSecret;
 
     public SecretKey getSecretKey() {
-        byte[] keyBytes = jwtSecret.getBytes();
-        return Keys.hmacShaKeyFor(keyBytes);
+        return Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
     }
 
     public String generateToken(String username) {
@@ -32,7 +32,7 @@ public class JwtService {
                 .subject(username)
                 .issuedAt(now)
                 .expiration(expiryDate)
-                .signWith(getSecretKey())
+                .signWith(getSecretKey(), Jwts.SIG.HS256)
                 .compact();
     }
 
