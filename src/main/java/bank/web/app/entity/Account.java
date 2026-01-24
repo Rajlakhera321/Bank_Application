@@ -42,7 +42,7 @@ public class Account {
     private String currency;
     private String code;
     private String label;
-    private Character symbol;
+    private char symbol;
 
     @CreationTimestamp
     private LocalDateTime createdAt;

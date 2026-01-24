@@ -18,6 +18,6 @@ public class UserDto {
     private String username;
     private String password;
     private Date dob;
-    private long tel;
+    private Long tel;
     private String gender;
 }

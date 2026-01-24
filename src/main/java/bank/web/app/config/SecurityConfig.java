@@ -31,13 +31,14 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(
                         req -> req
-                                .requestMatchers("/user/auth", "/user/register").permitAll()
-                                .anyRequest().authenticated()
+                                .requestMatchers("/user/auth", "/user/register")
+                                .permitAll()
+                                .anyRequest()
+                                .authenticated()
                 )
                 .authenticationProvider(authenticationProvider)
                 .addFilterBefore(authFilter, UsernamePasswordAuthenticationFilter.class)
-                .sessionManagement(session -> session
-                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 );
 
         return http.build();

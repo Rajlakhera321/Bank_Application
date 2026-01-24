@@ -38,13 +38,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
+        System.out.println("JWT Token: " + jwtToken);
+
         String subject = jwtService.extractSubject(jwtToken);
         User user = (User) userDetailsService.loadUserByUsername(subject);
         var context = SecurityContextHolder.getContext();
 
         if (user != null && context.getAuthentication() == null) {
             var authenticationToken = new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
-            authenticationToken.setDetails(user);
+            authenticationToken.setDetails(request);
             context.setAuthentication(authenticationToken);
         }
 
