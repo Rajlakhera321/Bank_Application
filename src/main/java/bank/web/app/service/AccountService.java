@@ -2,7 +2,6 @@ package bank.web.app.service;
 
 import java.util.List;
 
-import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Service;
 
 import bank.web.app.dto.AccountDto;
@@ -30,9 +29,10 @@ public class AccountService {
         return accountRepository.findByOwner_Uid(uid);
     }
 
-    public Transactions transferAccount(TransferDto transferDto, User user) {
-        var senderAccount = accountRepository.findByCodeAndOwner_Uid(user.getUid())
+    public Transactions transferAccount(TransferDto transferDto, User user) throws Exception {
+        var senderAccount = accountRepository.findByCodeAndOwner_Uid(transferDto.getCode(), user.getUid())
                 .orElseThrow(() -> new UnsupportedOperationException("Account of type currency do not exists for user"));
-        var receiverAccount = accountRepository.findByAccountNumber(transferDto.getRecipientAccountNumber());
+        var receiverAccount = accountRepository.findByAccountNumber(transferDto.getRecipientAccountNumber()).orElseThrow(() -> new Exception("Recipient account does not exist."));
+        return accountHelper.performTransfer(senderAccount, receiverAccount, transferDto.getAmount(), user);
     }
 }

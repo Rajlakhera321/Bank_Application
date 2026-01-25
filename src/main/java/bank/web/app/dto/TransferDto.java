@@ -11,7 +11,7 @@ import lombok.Setter;
 @AllArgsConstructor
 public class TransferDto {
 
-    private String recipientAccountNumber;
+    private long recipientAccountNumber;
     private double amount;
     private String code;
 }

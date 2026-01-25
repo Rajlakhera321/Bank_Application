@@ -37,7 +37,7 @@ public class AccountController {
         return ResponseEntity.ok(accountService.getAccountsByUser(user.getUid()));
     }
 
-    @PostMapping
+    @PostMapping("/transfer")
     public ResponseEntity<Transactions> transferFunds(@RequestBody TransferDto transferDto, Authentication authentication) throws Exception {
         var user = (User) authentication.getPrincipal();
         return ResponseEntity.ok(accountService.transferAccount(transferDto, user));

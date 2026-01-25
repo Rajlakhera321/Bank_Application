@@ -68,7 +68,7 @@ public class User implements UserDetails {
     @JsonIgnore
     private Card card;
 
-    @OneToOne(mappedBy = "owner", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "owner", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JsonIgnore
     private List<Transactions> transactions;
 
