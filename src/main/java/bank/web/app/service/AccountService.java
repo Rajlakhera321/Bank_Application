@@ -1,6 +1,7 @@
 package bank.web.app.service;
 
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.stereotype.Service;
 
@@ -18,8 +19,8 @@ import lombok.RequiredArgsConstructor;
 public class AccountService {
 
     private final AccountRepository accountRepository;
-
     private final AccountHelper accountHelper;
+    private final ExchangeRateService exchangeRateService;
 
     public Account createAccount(AccountDto accountDto, User user) throws Exception {
         return accountHelper.createAccount(accountDto, user);
@@ -34,5 +35,9 @@ public class AccountService {
                 .orElseThrow(() -> new UnsupportedOperationException("Account of type currency do not exists for user"));
         var receiverAccount = accountRepository.findByAccountNumber(transferDto.getRecipientAccountNumber()).orElseThrow(() -> new Exception("Recipient account does not exist."));
         return accountHelper.performTransfer(senderAccount, receiverAccount, transferDto.getAmount(), user);
+    }
+
+    public Map<String, Double> getExchangeRate() {
+        return exchangeRateService.getRates();
     }
 }
