@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -42,12 +43,30 @@ public class ExchangeRateService {
     private String apiKey;
 
     public void getExchangeRates() {
-        String CURRENCY_API = "https://api.currencyapi.com/v3/latest?apikey=";
-        var response = restTemplate.getForEntity(CURRENCY_API + apiKey, JsonNode.class);
-        var data = Objects.requireNonNull(response.getBody()).get("data");
-        for (var currency : CURRENCIES) {
-            rates.put(currency, data.get(currency).get("value").doubleValue());
+        try {
+            String url = "https://api.currencyapi.com/v3/latest?apikey=" + apiKey;
+
+            String response = restTemplate.getForObject(url, String.class);
+
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode root = mapper.readTree(response);
+            JsonNode data = root.get("data");
+
+            for (String currency : CURRENCIES) {
+                JsonNode node = data.get(currency);
+
+                if (node == null) {
+                    System.out.println("Missing currency: " + currency);
+                    continue;
+                }
+
+                rates.put(currency, node.get("value").asDouble());
+            }
+
+            System.out.println("Rates: " + rates);
+
+        } catch (Exception e) {
+            e.printStackTrace();
         }
-        System.out.println(rates);
     }
 }

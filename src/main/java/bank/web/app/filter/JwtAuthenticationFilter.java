@@ -39,8 +39,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
-        System.out.println("JWT Token: " + jwtToken);
-
         String subject = jwtService.extractSubject(jwtToken);
         User user = (User) userDetailsService.loadUserByUsername(subject);
         var context = SecurityContextHolder.getContext();

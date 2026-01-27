@@ -6,6 +6,7 @@ import java.util.Map;
 import org.springframework.stereotype.Service;
 
 import bank.web.app.dto.AccountDto;
+import bank.web.app.dto.ConvertDto;
 import bank.web.app.dto.TransferDto;
 import bank.web.app.entity.Account;
 import bank.web.app.entity.Transactions;
@@ -39,5 +40,9 @@ public class AccountService {
 
     public Map<String, Double> getExchangeRate() {
         return exchangeRateService.getRates();
+    }
+
+    public Transactions convertCurrency(ConvertDto convertDto, User user) throws Exception {
+        return accountHelper.convertCurrency(convertDto, user);
     }
 }

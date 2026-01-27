@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import bank.web.app.dto.AccountDto;
+import bank.web.app.dto.ConvertDto;
 import bank.web.app.dto.TransferDto;
 import bank.web.app.entity.Account;
 import bank.web.app.entity.Transactions;
@@ -47,5 +48,11 @@ public class AccountController {
     @GetMapping("/rates")
     public ResponseEntity<Map<String, Double>> getExchangeRates() {
         return ResponseEntity.ok(accountService.getExchangeRate());
+    }
+
+    @PostMapping("/convert")
+    public ResponseEntity<Transactions> convertCurrency(@RequestBody ConvertDto convertDto, Authentication authentication) throws Exception {
+        var user = (User) authentication.getPrincipal();
+        return ResponseEntity.ok(accountService.convertCurrency(convertDto, user));
     }
 }

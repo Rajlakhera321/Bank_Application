@@ -6,6 +6,7 @@ import java.util.Map;
 import org.springframework.stereotype.Component;
 
 import bank.web.app.dto.AccountDto;
+import bank.web.app.dto.ConvertDto;
 import bank.web.app.entity.Account;
 import bank.web.app.entity.Status;
 import bank.web.app.entity.Transactions;
@@ -13,6 +14,7 @@ import bank.web.app.entity.Type;
 import bank.web.app.entity.User;
 import bank.web.app.repository.AccountRepository;
 import bank.web.app.repository.TransactionRepository;
+import bank.web.app.service.ExchangeRateService;
 import bank.web.app.util.RandomUtil;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +26,7 @@ public class AccountHelper {
 
     private final AccountRepository accountRepository;
     private final TransactionRepository transactionRepository;
+    private final ExchangeRateService exchangeRateService;
 
     private final Map<String, String> CURRENCIES = Map.of(
             "USD", "United States Dollar",
@@ -97,5 +100,58 @@ public class AccountHelper {
         if (account.getBalance() < amount) {
             throw new Exception("Insufficient funds in the account.");
         }
+    }
+
+    public void validateAmount(double amount) throws Exception {
+        if (amount <= 0) {
+            throw new Exception("Amount must be greater than zero.");
+        }
+    }
+
+    public void validateDifferentCurrencyType(ConvertDto convertDto) throws Exception {
+        if (convertDto.getToCurrency().equalsIgnoreCase(convertDto.getFromCurrency())) {
+            throw new Exception("Conversion between the same currency types is not allowed.");
+        }
+    }
+
+    public void validateAccountOwnership(ConvertDto convertDto, String uid) throws Exception {
+        accountRepository.findByCodeAndOwner_Uid(convertDto.getFromCurrency(), uid)
+                .orElseThrow(() -> new Exception("Account of type " + convertDto.getFromCurrency() + " does not exist for from user."));
+        accountRepository.findByCodeAndOwner_Uid(convertDto.getToCurrency(), uid)
+                .orElseThrow(() -> new Exception("Account of type " + convertDto.getToCurrency() + " does not exist for to user."));
+    }
+
+    public void validateConversion(ConvertDto convertDto, String uid) throws Exception {
+        validateDifferentCurrencyType(convertDto);
+        validateAccountOwnership(convertDto, uid);
+        validateAmount(convertDto.getAmount());
+        validateSufficientFunds(
+                accountRepository.findByCodeAndOwner_Uid(convertDto.getFromCurrency(), uid).get(),
+                convertDto.getAmount()
+        );
+    }
+
+    public Transactions convertCurrency(ConvertDto convertDto, User user) throws Exception {
+        validateConversion(convertDto, user.getUid());
+        var rates = exchangeRateService.getRates();
+        var sendingRates = rates.get(convertDto.getFromCurrency());
+        var receivingRates = rates.get(convertDto.getToCurrency());
+        var computedAmount = (receivingRates / sendingRates) * convertDto.getAmount();
+        var fromAccount = accountRepository.findByCodeAndOwner_Uid(convertDto.getFromCurrency(), user.getUid()).get();
+        var toAccount = accountRepository.findByCodeAndOwner_Uid(convertDto.getToCurrency(), user.getUid()).get();
+        fromAccount.setBalance(fromAccount.getBalance() - (convertDto.getAmount() * 1.01));
+        toAccount.setBalance(toAccount.getBalance() + computedAmount);
+        accountRepository.saveAll(List.of(fromAccount, toAccount));
+
+        var transaction = Transactions.builder()
+                .owner(user)
+                .amount(convertDto.getAmount())
+                .txFee(convertDto.getAmount() * 0.01)
+                .account(fromAccount)
+                .status(Status.COMPLETED)
+                .type(Type.CONVERSION)
+                .build();
+
+        return transactionRepository.save(transaction);
     }
 }
