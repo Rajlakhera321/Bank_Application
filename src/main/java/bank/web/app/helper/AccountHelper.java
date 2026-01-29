@@ -64,24 +64,9 @@ public class AccountHelper {
         senderAccount.setBalance(senderAccount.getBalance() - (amount * 1.01));
         receiverAccount.setBalance(receiverAccount.getBalance() + amount);
         accountRepository.saveAll(List.of(senderAccount, receiverAccount));
-        var senderTransactions = Transactions.builder()
-                .account(senderAccount)
-                .status(Status.COMPLETED)
-                .type(Type.WITHDRAWAL)
-                .txFee(amount * 0.01)
-                .amount(amount)
-                .owner(senderAccount.getOwner())
-                .build();
-
-        var receiverTransactions = Transactions.builder()
-                .account(receiverAccount)
-                .status(Status.COMPLETED)
-                .type(Type.DEPOSIT)
-                .amount(amount)
-                .owner(receiverAccount.getOwner())
-                .build();
-
-        return transactionRepository.saveAll(List.of(senderTransactions, receiverTransactions)).get(0);
+        var senderTransactions = createAccountTransaction(amount, Type.WITHDRAWAL, amount * 0.01, user, senderAccount);
+        var receiverTransactions = createAccountTransaction(amount, Type.DEPOSIT, 0.00, receiverAccount.getOwner(), receiverAccount);
+        return senderTransactions;
     }
 
     private void validateAccountNonExistsForUser(String code, String uid) throws Exception {
@@ -143,15 +128,22 @@ public class AccountHelper {
         toAccount.setBalance(toAccount.getBalance() + computedAmount);
         accountRepository.saveAll(List.of(fromAccount, toAccount));
 
-        var transaction = Transactions.builder()
-                .owner(user)
-                .amount(convertDto.getAmount())
-                .txFee(convertDto.getAmount() * 0.01)
-                .account(fromAccount)
+        var fromAccounttransaction = createAccountTransaction(convertDto.getAmount(), Type.CONVERSION, convertDto.getAmount() * 0.01, user, fromAccount);
+        var toAccounttransaction = createAccountTransaction(computedAmount, Type.DEPOSIT, 0.00, user, toAccount);
+
+        return fromAccounttransaction;
+    }
+
+    public Transactions createAccountTransaction(double amount, Type type, double txFee, User user, Account usdAccount) {
+        var tx = Transactions.builder()
+                .amount(amount)
+                .type(type)
+                .txFee(txFee)
                 .status(Status.COMPLETED)
-                .type(Type.CONVERSION)
+                .account(usdAccount)
+                .owner(user)
                 .build();
 
-        return transactionRepository.save(transaction);
+        return transactionRepository.save(tx);
     }
 }

@@ -35,6 +35,7 @@ public class CardController {
 
     @PostMapping("credit")
     public ResponseEntity<Transactions> creditCard(@RequestParam double amount, Authentication authentication) {
+        System.out.println("Credit card request received with amount: " + amount);
         var user = (User) authentication.getPrincipal();
         return ResponseEntity.ok(cardService.creditCard(amount, user));
     }

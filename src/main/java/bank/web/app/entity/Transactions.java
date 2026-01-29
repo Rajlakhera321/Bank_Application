@@ -52,16 +52,16 @@ public class Transactions {
 
     @ManyToOne
     @JoinColumn(name = "card_id")
-    // @JsonIgnore
+    @JsonIgnore
     private Card card;
 
     @ManyToOne
     @JoinColumn(name = "owner_id")
-    // @JsonIgnore
+    @JsonIgnore
     private User owner;
 
     @ManyToOne
     @JoinColumn(name = "account_id")
-    // @JsonIgnore
+    @JsonIgnore
     private Account account;
 }
