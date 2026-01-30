@@ -2,19 +2,19 @@ package bank.web.app.helper;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.springframework.stereotype.Component;
 
 import bank.web.app.dto.AccountDto;
 import bank.web.app.dto.ConvertDto;
 import bank.web.app.entity.Account;
-import bank.web.app.entity.Status;
 import bank.web.app.entity.Transactions;
 import bank.web.app.entity.Type;
 import bank.web.app.entity.User;
 import bank.web.app.repository.AccountRepository;
-import bank.web.app.repository.TransactionRepository;
 import bank.web.app.service.ExchangeRateService;
+import bank.web.app.service.TransactionService;
 import bank.web.app.util.RandomUtil;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -25,8 +25,8 @@ import lombok.RequiredArgsConstructor;
 public class AccountHelper {
 
     private final AccountRepository accountRepository;
-    private final TransactionRepository transactionRepository;
     private final ExchangeRateService exchangeRateService;
+    private final TransactionService transactionService;
 
     private final Map<String, String> CURRENCIES = Map.of(
             "USD", "United States Dollar",
@@ -64,8 +64,8 @@ public class AccountHelper {
         senderAccount.setBalance(senderAccount.getBalance() - (amount * 1.01));
         receiverAccount.setBalance(receiverAccount.getBalance() + amount);
         accountRepository.saveAll(List.of(senderAccount, receiverAccount));
-        var senderTransactions = createAccountTransaction(amount, Type.WITHDRAWAL, amount * 0.01, user, senderAccount);
-        var receiverTransactions = createAccountTransaction(amount, Type.DEPOSIT, 0.00, receiverAccount.getOwner(), receiverAccount);
+        var senderTransactions = transactionService.createAccountTransaction(amount, Type.WITHDRAWAL, amount * 0.01, user, senderAccount);
+        transactionService.createAccountTransaction(amount, Type.DEPOSIT, 0.00, receiverAccount.getOwner(), receiverAccount);
         return senderTransactions;
     }
 
@@ -128,22 +128,34 @@ public class AccountHelper {
         toAccount.setBalance(toAccount.getBalance() + computedAmount);
         accountRepository.saveAll(List.of(fromAccount, toAccount));
 
-        var fromAccounttransaction = createAccountTransaction(convertDto.getAmount(), Type.CONVERSION, convertDto.getAmount() * 0.01, user, fromAccount);
-        var toAccounttransaction = createAccountTransaction(computedAmount, Type.DEPOSIT, 0.00, user, toAccount);
+        var fromAccounttransaction = transactionService.createAccountTransaction(convertDto.getAmount(), Type.CONVERSION, convertDto.getAmount() * 0.01, user, fromAccount);
+        transactionService.createAccountTransaction(computedAmount, Type.DEPOSIT, 0.00, user, toAccount);
 
         return fromAccounttransaction;
     }
 
-    public Transactions createAccountTransaction(double amount, Type type, double txFee, User user, Account usdAccount) {
-        var tx = Transactions.builder()
-                .amount(amount)
-                .type(type)
-                .txFee(txFee)
-                .status(Status.COMPLETED)
-                .account(usdAccount)
-                .owner(user)
-                .build();
+    public boolean existsByCodeAndOwnerUid(String code, String uid) {
+        return accountRepository.existsByCodeAndOwner_Uid(code, uid);
+    }
 
-        return transactionRepository.save(tx);
+    /**
+     * Retrieves the account with the given currency code and user identifier.
+     *
+     * @param code The currency code of the account.
+     * @param uid The unique identifier of the user.
+     * @return The account if found, otherwise an empty Optional.
+     */
+    public Optional<Account> findByCodeAndOwnerUid(String code, String uid) {
+        return accountRepository.findByCodeAndOwner_Uid(code, uid);
+    }
+
+    /**
+     * Saves the given account to the database.
+     *
+     * @param usdAccount The account to be saved.
+     * @return The saved account.
+     */
+    public Account save(Account usdAccount) {
+        return accountRepository.save(usdAccount);
     }
 }
